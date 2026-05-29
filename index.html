@@ -170,6 +170,7 @@
   <div class="left">
     <div class="left-controls">
       <!-- REAL SEARCH -->
+      <input class="input-base" type="text" id="city-input" placeholder="Ciudad (ej: Tijuana, Ensenada, San Diego...)" value="Tijuana BC Mexico" />
       <div class="search-row">
         <select class="input-base" id="cat-search" style="flex:1">
           <option value="medical spa">Medical Spas</option>
@@ -288,6 +289,7 @@ function switchTab(tab, el) {
 // ── REAL SEARCH ──────────────────────────────────────────────────────────
 async function searchBusinesses() {
   const category = document.getElementById('cat-search').value;
+  const city = document.getElementById('city-input').value.trim() || 'Tijuana BC Mexico';
   const btn = document.getElementById('search-btn');
   const indicator = document.getElementById('searching-indicator');
 
@@ -299,7 +301,7 @@ async function searchBusinesses() {
     const res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-action': 'places-search' },
-      body: JSON.stringify({ query: category, location: 'Tijuana BC Mexico' })
+      body: JSON.stringify({ query: category, location: city })
     });
 
     const data = await res.json();
@@ -473,7 +475,7 @@ REGLAS:
       })
     });
     const data = await res.json();
-    const message = data.content?.[0]?.text || data.content?.[0]?.text || (data.error ? 'Error: ' + (data.error.message || JSON.stringify(data.error)) : 'Sin respuesta');
+    const message = data.content?.[0]?.text || '';
     updateBiz(id, { status:'ready', message });
     toast('Mensaje generado ✓','success');
   } catch(e) {
