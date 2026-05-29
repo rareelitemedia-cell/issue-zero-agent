@@ -435,66 +435,40 @@ async function generateMessage(id) {
   updateBiz(id, { status:'generating', message:null });
   renderDetail(); renderList();
 
-  const isUSA = (biz.location||'').toLowerCase().includes(', ca') || 
-               (biz.location||'').toLowerCase().includes(', ca ') ||
-               (biz.location||'').toLowerCase().includes('san diego') ||
-               (biz.location||'').toLowerCase().includes(', tx') ||
-               (biz.location||'').toLowerCase().includes(', ny') ||
-               (biz.location||'').toLowerCase().includes('ee. uu') ||
-               (biz.location||'').toLowerCase().includes('united states');
-  const lang = isUSA ? 'English' : 'Spanish';
+  const isUSA = (biz.location||'').toLowerCase().match(/san diego|, ca |ee\. uu|united states|, tx|, ny/);
+  const lang = isUSA ? 'en' : 'es';
 
-  const systemPrompt = isUSA ? 
-  `You are the outreach specialist for Issue Zero Creative. You write messages that sound like one creative director reaching out to a peer — not a salesperson.
-
-${ISSUE_ZERO_CONTEXT}
-
-RULES:
-1. Write in English
-2. Open with a genuine, specific compliment about THIS business
-3. Introduce Issue Zero in max 2 sentences — we're based in San Diego/Tijuana, we do hybrid production (real cinematography + AI)
-4. Mention ONE specific service that fits their business type
-5. Soft, specific CTA — never "let me know if interested"
-6. Sign as: Alexander Arriaga / Issue Zero Creative
-7. Max 160 words
-8. Write the message only, no preamble` 
-  :
-  `Eres el especialista de outreach de Issue Zero Creative. Escribes mensajes que suenan como un colega creativo hablándole a otro colega — no como un vendedor.
-
-${ISSUE_ZERO_CONTEXT}
-
-REGLAS:
-1. Escribe en español, tutear al destinatario
-2. Abrir con un cumplido genuino y específico sobre ESE negocio
-3. Presentar Issue Zero en máximo 2 oraciones — somos de TJ/SD, hacemos producción híbrida real + IA
-4. Mencionar UN servicio específico para ese tipo de negocio
-5. CTA suave y concreto — nunca "avísame si te interesa"
-6. Firmar como: Alexander Arriaga / Issue Zero Creative
-7. Máximo 160 palabras
-8. Solo escribe el mensaje, sin preamble`;
+  const businessData = `Name: ${biz.name}
+Category: ${biz.category}
+Location: ${biz.location}
+Description: ${biz.description || 'N/A'}
+Rating: ${biz.rating}/5 (${biz.reviews} reviews)
+Instagram: ${biz.instagram}
+Website: ${biz.website}
+Write the outreach message now.`;
 
   try {
-    const userMsg = `Business details:\nName: ${biz.name}\nCategory: ${CAT_LABELS[biz.category]||'Business'}\nLocation: ${biz.location}\nDescription: ${biz.description}\nRating: ${biz.rating}/5 (${biz.reviews} reviews)\nInstagram: ${biz.instagram}\nWebsite: ${biz.website}\nWrite the outreach message now.`;
-
     const res = await fetch(WORKER_URL, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json', 'x-action':'generate' },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-action': 'generate' },
       body: JSON.stringify({
-        system: systemPrompt,
-        businessData: userMsg,
-        photos: biz.photos || []
+        businessData,
+        photos: biz.photos || [],
+        lang
       })
     });
+
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     let data;
-    try { data = await res.json(); } catch(e) { throw new Error('Respuesta inválida del servidor'); }
+    try { data = await res.json(); } catch(e) { throw new Error('Respuesta invalida del servidor'); }
     if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
     const message = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
-    if (!message) throw new Error('Respuesta vacía — revisa tu API key');
+    if (!message) throw new Error('Respuesta vacia');
     updateBiz(id, { status:'ready', message });
-    toast('Mensaje generado ✓','success');
+    toast('Mensaje generado', 'success');
   } catch(e) {
     updateBiz(id, { status:'pending' });
-    toast('Error: '+e.message,'error');
+    toast('Error: '+e.message, 'error');
   }
   renderDetail(); renderList(); updateStats();
 }
