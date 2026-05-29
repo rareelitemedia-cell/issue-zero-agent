@@ -253,8 +253,8 @@ function loadData() {
   if (s) { try { businesses = JSON.parse(s); } catch(e) { businesses = []; } }
 }
 function saveData() { localStorage.setItem('iz_v3_businesses', JSON.stringify(businesses)); }
-function getApiKey() { return localStorage.getItem('iz_api_key') || ''; }
-function setApiKey(k) { localStorage.setItem('iz_api_key', k); }
+function getApiKey() { const k = localStorage.getItem('iz_api_key') || ''; return k.replace(/[^\x20-\x7E]/g, '').trim(); }
+function setApiKey(k) { localStorage.setItem('iz_api_key', k.replace(/[^\x20-\x7E]/g, '').trim()); }
 
 function openModal() { document.getElementById('key-input').value = getApiKey(); document.getElementById('key-modal').classList.add('open'); }
 function closeModal() { document.getElementById('key-modal').classList.remove('open'); }
@@ -488,6 +488,8 @@ REGLAS:
 8. Solo escribe el mensaje, sin preamble`;
 
   try {
+    const userMsg = `Business details:\nName: ${biz.name}\nCategory: ${CAT_LABELS[biz.category]||'Business'}\nLocation: ${biz.location}\nDescription: ${biz.description}\nRating: ${biz.rating}/5 (${biz.reviews} reviews)\nInstagram: ${biz.instagram}\nWebsite: ${biz.website}\nWrite the outreach message now.`;
+
     const res = await fetch(WORKER_URL, {
       method:'POST',
       headers:{ 'Content-Type':'application/json', 'x-api-key': key, 'x-action':'generate' },
@@ -495,7 +497,7 @@ REGLAS:
         model: 'claude-sonnet-4-6',
         max_tokens: 600,
         system: systemPrompt,
-        messages: [{ role:'user', content:`Escribe el mensaje para:\nNombre: ${biz.name}\nCategoría: ${CAT_LABELS[biz.category]||'Negocio'}\nUbicación: ${biz.location}\nDescripción: ${biz.description}\nRating: ${biz.rating}/5 (${biz.reviews} reseñas)\nInstagram: ${biz.instagram}\nWebsite: ${biz.website}` }]
+        messages: [{ role:'user', content: userMsg }]
       })
     });
     let data;
