@@ -449,12 +449,36 @@ async function generateMessage(id) {
   updateBiz(id, { status:'generating', message:null });
   renderDetail(); renderList();
 
-  const systemPrompt = `Eres el especialista de outreach de Issue Zero Creative. Escribes mensajes que suenan como un colega creativo hablándole a otro colega — no como un vendedor.
+  const isUSA = (biz.location||'').toLowerCase().includes(', ca') || 
+               (biz.location||'').toLowerCase().includes(', ca ') ||
+               (biz.location||'').toLowerCase().includes('san diego') ||
+               (biz.location||'').toLowerCase().includes(', tx') ||
+               (biz.location||'').toLowerCase().includes(', ny') ||
+               (biz.location||'').toLowerCase().includes('ee. uu') ||
+               (biz.location||'').toLowerCase().includes('united states');
+  const lang = isUSA ? 'English' : 'Spanish';
+
+  const systemPrompt = isUSA ? 
+  `You are the outreach specialist for Issue Zero Creative. You write messages that sound like one creative director reaching out to a peer — not a salesperson.
+
+${ISSUE_ZERO_CONTEXT}
+
+RULES:
+1. Write in English
+2. Open with a genuine, specific compliment about THIS business
+3. Introduce Issue Zero in max 2 sentences — we're based in San Diego/Tijuana, we do hybrid production (real cinematography + AI)
+4. Mention ONE specific service that fits their business type
+5. Soft, specific CTA — never "let me know if interested"
+6. Sign as: Alexander Arriaga / Issue Zero Creative
+7. Max 160 words
+8. Write the message only, no preamble` 
+  :
+  `Eres el especialista de outreach de Issue Zero Creative. Escribes mensajes que suenan como un colega creativo hablándole a otro colega — no como un vendedor.
 
 ${ISSUE_ZERO_CONTEXT}
 
 REGLAS:
-1. Siempre en español, tutear al destinatario
+1. Escribe en español, tutear al destinatario
 2. Abrir con un cumplido genuino y específico sobre ESE negocio
 3. Presentar Issue Zero en máximo 2 oraciones — somos de TJ/SD, hacemos producción híbrida real + IA
 4. Mencionar UN servicio específico para ese tipo de negocio
@@ -474,8 +498,11 @@ REGLAS:
         messages: [{ role:'user', content:`Escribe el mensaje para:\nNombre: ${biz.name}\nCategoría: ${CAT_LABELS[biz.category]||'Negocio'}\nUbicación: ${biz.location}\nDescripción: ${biz.description}\nRating: ${biz.rating}/5 (${biz.reviews} reseñas)\nInstagram: ${biz.instagram}\nWebsite: ${biz.website}` }]
       })
     });
-    const data = await res.json();
-    const message = data.content?.[0]?.text || '';
+    let data;
+    try { data = await res.json(); } catch(e) { throw new Error('Respuesta inválida del servidor'); }
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    const message = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
+    if (!message) throw new Error('Respuesta vacía — revisa tu API key');
     updateBiz(id, { status:'ready', message });
     toast('Mensaje generado ✓','success');
   } catch(e) {
