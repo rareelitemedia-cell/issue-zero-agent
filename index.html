@@ -430,10 +430,10 @@ function renderDetail() {
         <div class="contact-item"><span class="contact-icon">⌘</span><div><div class="contact-label">Website</div><div class="contact-val">${biz.website||'—'}</div></div></div>
       </div>
       <div class="divider"></div>
-      <div class="biz-desc">${biz.description||''}</div>
+      <div class="biz-desc">${biz.description && !biz.description.includes("Tijuana, BC.") ? biz.description : (biz.name + " — " + (CAT_LABELS[biz.category]||"Negocio") + " ubicado en " + biz.location + ".")}</div>
       <div class="rating-row">
         <span class="star-badge">★ ${biz.rating}</span>
-        <span class="review-count">${biz.reviews} reseñas en Google</span>
+        <span class="review-count"> ${biz.reviews} reseñas en Google</span>
       </div>
       <div class="divider"></div>
       ${msgSection}
