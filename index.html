@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Issue Zero — Outreach Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #c9a84c;
+    --gold-dim: #c9a84c22;
+    --cyan: #4dd9d9;
+    --bg: #080808;
+    --surface: #0f0f0f;
+    --surface2: #151515;
+    --border: #1e1e1e;
+    --border2: #282828;
+    --text: #e8e8e8;
+    --muted: #555;
+    --muted2: #888;
+    --green: #22c55e;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --amber: #f59e0b;
+  }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-ring {
+    width: 34px;
+    height: 34px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo-ring::after {
+    content: '';
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid var(--gold);
+    border-radius: 50%;
+    opacity: 0.5;
+  }
+
+  .logo-text { line-height: 1; }
+  .logo-name { font-family: 'Archivo Black', sans-serif; font-size: 13px; letter-spacing: 0.15em; color: #fff; }
+  .logo-sub { font-size: 9px; color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase; margin-top: 2px; }
+
+  .header-right { display: flex; align-items: center; gap: 16px; }
+
+  .stat-chip {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 11px;
+  }
+
+  .stat-num { font-weight: 500; }
+
+  #api-key-btn {
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--muted2);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 6px 12px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  #api-key-btn:hover { border-color: var(--gold); color: var(--gold); }
+  #api-key-btn.configured { border-color: #22c55e44; color: var(--green); }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+    padding: 0 24px;
+  }
+
+  .tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 12px 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  /* ── LAYOUT ── */
+  .body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── LEFT PANEL ── */
+  .left {
+    width: 320px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+  }
+
+  .left-controls {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .input-base {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 8px 11px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+
+  .input-base:focus { border-color: var(--gold); }
+  .input-base::placeholder { color: var(--muted); }
+
+  select.input-base { cursor: pointer; }
+
+  .add-row { display: flex; gap: 6px; }
+
+  .add-btn {
+    background: var(--gold);
+    border: none;
+    border-radius: 6px;
+    color: #000;
+    font-size: 18px;
+    font-weight: 700;
+    width: 36px;
+    flex-shrink: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s;
+  }
+
+  .add-btn:hover { opacity: 0.85; }
+  .add-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .biz-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  /* scrollbar */
+  .biz-list::-webkit-scrollbar { width: 3px; }
+  .biz-list::-webkit-scrollbar-track { background: transparent; }
+  .biz-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .biz-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .biz-card:hover { border-color: var(--border2); }
+  .biz-card.active { border-color: #c9a84c55; background: #131109; }
+
+  .card-top { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 7px; }
+  .cat-icon { font-size: 14px; color: var(--gold); flex-shrink: 0; margin-top: 1px; }
+  .card-info { flex: 1; min-width: 0; }
+  .card-name { font-size: 11px; font-weight: 500; color: #f0f0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-loc { font-size: 9px; color: var(--muted); margin-top: 2px; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .card-bottom { display: flex; justify-content: space-between; align-items: center; }
+  .rating-small { font-size: 9px; color: var(--gold); }
+  .status-text { font-size: 8px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* ── RIGHT PANEL ── */
+  .right {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--bg);
+  }
+
+  .right::-webkit-scrollbar { width: 3px; }
+  .right::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  .empty-state {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--muted);
+  }
+
+  .empty-ring { font-size: 52px; color: var(--border2); }
+  .empty-title { font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; }
+  .empty-sub { font-size: 10px; color: var(--muted); text-align: center; max-width: 260px; line-height: 1.7; }
+
+  /* ── DETAIL ── */
+  .detail { padding: 28px 32px; max-width: 720px; }
+
+  .detail-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  .detail-icon { font-size: 28px; color: var(--gold); flex-shrink: 0; line-height: 1.2; }
+
+  .detail-name { font-family: 'Archivo Black', sans-serif; font-size: 19px; color: #fff; letter-spacing: -0.01em; }
+  .detail-loc { font-size: 10px; color: var(--muted2); margin-top: 3px; letter-spacing: 0.08em; }
+
+  .status-badge {
+    margin-left: auto;
+    font-size: 9px;
+    padding: 4px 11px;
+    border-radius: 20px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .contact-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 9px 11px;
+  }
+
+  .contact-icon { font-size: 12px; color: var(--gold); flex-shrink: 0; margin-top: 1px; }
+  .contact-label { font-size: 8px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
+  .contact-val { font-size: 10px; color: #ccc; margin-top: 2px; word-break: break-all; }
+
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  .biz-desc { font-size: 11px; color: var(--muted2); line-height: 1.8; }
+  .rating-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .star-badge { font-size: 11px; color: var(--gold); }
+  .review-count { font-size: 10px; color: var(--muted); }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 11px;
+  }
+
+  .section-title { font-size: 9px; color: var(--muted2); letter-spacing: 0.15em; text-transform: uppercase; }
+
+  .regen-btn {
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    color: var(--muted2);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .regen-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .regen-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .generate-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--gold), #a87830);
+    border: none;
+    border-radius: 8px;
+    color: #000;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 13px 20px;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: opacity 0.2s;
+  }
+
+  .generate-btn:hover { opacity: 0.88; }
+  .generate-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .generating-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .gen-text { font-size: 11px; color: var(--muted2); }
+
+  .dots { display: flex; gap: 4px; }
+
+  .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--gold);
+    animation: blink 1.2s infinite;
+  }
+
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink {
+    0%, 100% { opacity: 0.2; transform: scale(0.7); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+
+  .message-box {
+    background: #0b0b0b;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+
+  .message-text {
+    font-size: 12px;
+    color: #d0d0d0;
+    line-height: 1.85;
+    white-space: pre-wrap;
+  }
+
+  .action-row { display: flex; gap: 7px; margin-bottom: 8px; }
+
+  .btn {
+    flex: 1;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.07em;
+    padding: 9px 10px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    display: block;
+    transition: all 0.15s;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--muted2);
+  }
+
+  .btn:hover { border-color: var(--muted2); color: var(--text); }
+
+  .btn-wa { background: #0f1f10; border-color: #25d36633; color: #25d366; }
+  .btn-wa:hover { background: #152a17; }
+
+  .btn-ig { background: #1a0f1f; border-color: #c026d333; color: #c026d3; }
+  .btn-ig:hover { background: #200f28; }
+
+  .final-row { display: flex; gap: 7px; }
+
+  .btn-sent {
+    flex: 1;
+    background: #0a1f12;
+    border: 1px solid #22c55e33;
+    border-radius: 6px;
+    color: var(--green);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 9px;
+    cursor: pointer;
+    letter-spacing: 0.07em;
+    transition: all 0.15s;
+  }
+
+  .btn-sent:hover { background: #0e2918; }
+
+  .btn-skip {
+    background: #1f0a0a;
+    border: 1px solid #ef444433;
+    border-radius: 6px;
+    color: var(--red);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 9px 14px;
+    cursor: pointer;
+    letter-spacing: 0.07em;
+    transition: all 0.15s;
+  }
+
+  .btn-skip:hover { background: #2a0e0e; }
+
+  .sent-confirm {
+    flex: 1;
+    font-size: 11px;
+    color: var(--green);
+    text-align: center;
+    padding: 9px;
+    background: #0a1f12;
+    border-radius: 6px;
+    border: 1px solid #22c55e33;
+    letter-spacing: 0.06em;
+  }
+
+  .skipped-confirm {
+    flex: 1;
+    font-size: 11px;
+    color: var(--red);
+    text-align: center;
+    padding: 9px;
+    background: #1f0a0a;
+    border-radius: 6px;
+    border: 1px solid #ef444433;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 28px;
+    width: 440px;
+    max-width: 90vw;
+  }
+
+  .modal-title {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 15px;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+
+  .modal-sub { font-size: 10px; color: var(--muted2); line-height: 1.7; margin-bottom: 18px; }
+
+  .modal-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 10px 13px;
+    outline: none;
+    margin-bottom: 14px;
+    letter-spacing: 0.03em;
+  }
+
+  .modal-input:focus { border-color: var(--gold); }
+
+  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+
+  .modal-cancel {
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--muted2);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 8px 16px;
+    cursor: pointer;
+  }
+
+  .modal-save {
+    background: var(--gold);
+    border: none;
+    border-radius: 6px;
+    color: #000;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 8px 18px;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 11px;
+    padding: 10px 18px;
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.25s;
+    pointer-events: none;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { border-color: #22c55e44; color: var(--green); }
+  .toast.error { border-color: #ef444444; color: var(--red); }
+
+  /* ── NO KEY WARNING ── */
+  .no-key-banner {
+    background: #1a1200;
+    border: 1px solid #c9a84c44;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 11px;
+    color: var(--gold);
+    line-height: 1.6;
+  }
+
+  /* Scrollbar global */
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- API KEY MODAL -->
+<div class="modal-overlay" id="key-modal">
+  <div class="modal">
+    <div class="modal-title">API Key de Anthropic</div>
+    <div class="modal-sub">
+      Tu key se guarda solo en este navegador (localStorage). Nunca sale a ningún servidor externo.<br><br>
+      Consíguela en: <strong>console.anthropic.com → API Keys</strong>
+    </div>
+    <input class="modal-input" type="password" id="key-input" placeholder="sk-ant-api03-..." />
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="modal-save" onclick="saveKey()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-ring"></div>
+    <div class="logo-text">
+      <div class="logo-name">ISSUE ZERO</div>
+      <div class="logo-sub">Outreach Agent</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="stat-chip">
+      <span class="stat-num" id="stat-gen" style="color:var(--amber)">0</span>
+      <span style="color:var(--muted);font-size:9px">generados</span>
+    </div>
+    <div class="stat-chip">
+      <span class="stat-num" id="stat-sent" style="color:var(--green)">0</span>
+      <span style="color:var(--muted);font-size:9px">enviados</span>
+    </div>
+    <div class="stat-chip">
+      <span class="stat-num" id="stat-pend" style="color:var(--muted2)">0</span>
+      <span style="color:var(--muted);font-size:9px">pendientes</span>
+    </div>
+    <button id="api-key-btn" onclick="openModal()">⚙ API Key</button>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('all', this)">Todos</button>
+  <button class="tab" onclick="switchTab('queue', this)">Cola del Día</button>
+  <button class="tab" onclick="switchTab('sent', this)">Enviados</button>
+  <button class="tab" onclick="switchTab('skipped', this)">Descartados</button>
+</div>
+
+<!-- BODY -->
+<div class="body">
+  <!-- LEFT -->
+  <div class="left">
+    <div class="left-controls">
+      <input class="input-base" type="text" id="search-filter" placeholder="Buscar prospecto..." oninput="renderList()" />
+      <select class="input-base" id="cat-filter" onchange="renderList()">
+        <option value="all">Todas las categorías</option>
+        <option value="medical_spa">Medical Spa</option>
+        <option value="cafe">Café</option>
+        <option value="restaurant">Restaurante</option>
+        <option value="small_business">Negocio Pequeño</option>
+      </select>
+      <div class="add-row">
+        <input class="input-base" type="text" id="add-input" placeholder="Agregar negocio..." style="flex:1" onkeydown="if(event.key==='Enter')addBusiness()" />
+        <button class="add-btn" onclick="addBusiness()" id="add-btn">+</button>
+      </div>
+    </div>
+    <div class="biz-list" id="biz-list"></div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right" id="right-panel">
+    <div class="empty-state">
+      <div class="empty-ring">◯</div>
+      <div class="empty-title">Selecciona un prospecto</div>
+      <div class="empty-sub">Elige un negocio de la lista para ver su perfil y generar el mensaje de outreach personalizado.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────
+const DEFAULT_BUSINESSES = [
+  { id: 1, name: "Lumbre Med Spa", category: "medical_spa", location: "Tijuana, BC — Zona Río", phone: "+52 (664) 555-0181", email: "citas@lumbrespa.mx", instagram: "@lumbrespa.tij", website: "lumbrespa.mx", rating: 4.9, reviews: 287, description: "Med spa de lujo en Zona Río especializado en tratamientos láser, rellenos y rejuvenecimiento facial. Clientela de alto nivel, fuerte presencia en Instagram.", status: "pending", message: null },
+  { id: 2, name: "Café Translúcido", category: "cafe", location: "Tijuana, BC — La Cacho", phone: "+52 (664) 555-0334", email: "hola@translucido.mx", instagram: "@translucido.cafe", website: "translucido.mx", rating: 4.7, reviews: 214, description: "Café de especialidad en La Cacho con diseño minimalista, muy popular entre creativos y nómadas digitales. Estética muy cuidada.", status: "pending", message: null },
+  { id: 3, name: "Orígenes Restaurante", category: "restaurant", location: "Tijuana, BC — Zona Gastronómica", phone: "+52 (664) 555-0492", email: "reservas@origenes.mx", instagram: "@origenes.tij", website: "origenes.mx", rating: 4.8, reviews: 463, description: "Restaurante de alta cocina bajacaliforniana con menú de temporada y espacio privado para eventos. Referente gastronómico de Tijuana.", status: "pending", message: null },
+  { id: 4, name: "Vitae Aesthetic Clinic", category: "medical_spa", location: "Tijuana, BC — Zona Río", phone: "+52 (664) 555-0617", email: "info@vitaeclinic.mx", instagram: "@vitaeclinic", website: "vitaeclinic.mx", rating: 4.8, reviews: 198, description: "Clínica estética boutique en Zona Río enfocada en HydraFacials, PRP y contorno corporal. Atienden pacientes de San Diego y LA también.", status: "pending", message: null },
+  { id: 5, name: "Barra Urbana", category: "cafe", location: "Tijuana, BC — Pasaje Rodríguez", phone: "+52 (664) 555-0728", email: "contacto@barraurbana.mx", instagram: "@barraurbana.mx", website: "barraurbana.mx", rating: 4.6, reviews: 132, description: "Espacio de café, coctelería y cultura en Pasaje Rodríguez. Hostea eventos, exposiciones y pop-ups. Comunidad creativa muy activa.", status: "pending", message: null },
+  { id: 6, name: "Maza Cocina de Autor", category: "restaurant", location: "Tijuana, BC", phone: "+52 (664) 555-0855", email: "hello@mazatij.mx", instagram: "@maza.tij", website: "mazatij.mx", rating: 4.9, reviews: 391, description: "Restaurante de autor con identidad visual fuerte, experiencias de maridaje y espacio altamente fotogénico. Nominado a premios regionales.", status: "pending", message: null },
+  { id: 7, name: "Atelier Norte", category: "small_business", location: "Tijuana, BC — La Cacho", phone: "+52 (664) 555-0963", email: "studio@ateliernorte.mx", instagram: "@ateliernorte", website: "ateliernorte.mx", rating: 4.5, reviews: 78, description: "Boutique de moda independiente con diseños locales y piezas curadas. Comunidad fiel en Instagram en crecimiento, sin contenido profesional aún.", status: "pending", message: null },
+  { id: 8, name: "Radiant Skin Tijuana", category: "medical_spa", location: "Tijuana, BC", phone: "+52 (664) 555-0044", email: "citas@radiantskin.mx", instagram: "@radiantskin.tij", website: "radiantskin.mx", rating: 4.7, reviews: 321, description: "Med spa premium con medicina estética avanzada. Atienden clientes de ambos lados de la frontera, con reseñas frecuentes de San Diego y LA.", status: "pending", message: null },
+];
+
+const CAT_LABELS = { medical_spa: "Medical Spa", cafe: "Café", restaurant: "Restaurante", small_business: "Negocio Pequeño" };
+const CAT_ICONS = { medical_spa: "✦", cafe: "◈", restaurant: "◉", small_business: "◆" };
+const STATUS_CFG = {
+  pending:    { label: "Pendiente",    color: "#555555" },
+  generating: { label: "Generando...", color: "#f59e0b" },
+  ready:      { label: "Listo",        color: "#22c55e" },
+  sent:       { label: "Enviado",      color: "#3b82f6" },
+  skipped:    { label: "Descartado",   color: "#ef4444" },
+};
+
+const ISSUE_ZERO_CONTEXT = `
+SOBRE ISSUE ZERO CREATIVE:
+Issue Zero Creative es una agencia boutique de producción audiovisual de nueva generación, operando entre California y México (San Diego, Tijuana, Valle de Guadalupe, CDMX).
+
+PROPUESTA DE VALOR CENTRAL:
+"True Cinema Capture + Premium 4K AI Scalability"
+Un solo shoot cinematográfico real genera docenas de activos visuales escalados con IA a 4K. Esto significa:
+- 60% de optimización de presupuesto vs producción tradicional
+- 12x multiplicador de activos visuales desde una sola sesión
+- Respuesta creativa en 24 horas
+
+SERVICIOS POR INDUSTRIA:
+
+1. MEDICAL SPAS & WELLNESS — "Identidad Clínica Digital"
+   - Generamos visuales fotorrealistas de tratamientos SIN invadir la privacidad de pacientes
+   - Contenido clínico aspiracional e impecable para los 365 días del año
+   - Fotografía editorial y video cinématico del espacio, equipo y resultados
+   - Lookbooks AI para mostrar resultados de tratamientos de forma aspiracional
+
+2. RESTAURANTES & CAFÉS — Producción gastronómica editorial
+   - Brand films cinematográficos del espacio y experiencia
+   - Fotografía editorial de platillos y ambiente
+   - Reels de alta retención para Instagram/TikTok con estética de revista
+   - Escalado AI: de un shoot sacamos contenido para semanas de redes sociales
+
+3. NEGOCIOS DE MODA & LIFESTYLE — Editorial & Conceptual Advertising
+   - Fotografía editorial de producto y campaña
+   - Lookbooks AI con modelos digitales consistentes
+   - Campañas visuales escalables que transforman capturas físicas en identidad ubicua
+
+4. REAL ESTATE & HOSPITALITY — Executive & Luxury Identity
+   - Producción de listados ultra-lujo y escalado de atmósferas estacionales en una tarde
+   - Redecoramos digitalmente espacios para campañas eliminando costos de montaje físico
+
+DIFERENCIADORES CLAVE:
+- Somos la única agencia boutique en la frontera TJ/SD que combina cinematografía real + IA generativa
+- Producción a nivel internacional con costos de mercado local
+- Respuesta rápida: 24h creativa, entregas en días no semanas
+- Portafolio: clientes han escalado de 36k a 1.8M de audiencia con nuestra estrategia visual
+
+FIRMA: Alexander Arriaga / Issue Zero Creative
+CONTACTO: alexander@theamenitybyalexander.com
+PRESENCIA: San Diego | Tijuana | Valle de Guadalupe | CDMX
+`;
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+let businesses = [];
+let selectedId = null;
+let currentTab = 'all';
+
+// ── LOCALSTORAGE ──────────────────────────────────────────────────────────
+function loadData() {
+  const saved = localStorage.getItem('iz_businesses');
+  if (saved) {
+    try { businesses = JSON.parse(saved); return; } catch(e) {}
+  }
+  businesses = JSON.parse(JSON.stringify(DEFAULT_BUSINESSES));
+  saveData();
+}
+
+function saveData() {
+  localStorage.setItem('iz_businesses', JSON.stringify(businesses));
+}
+
+function getApiKey() { return localStorage.getItem('iz_api_key') || ''; }
+function setApiKey(k) { localStorage.setItem('iz_api_key', k); }
+
+// ── MODAL ─────────────────────────────────────────────────────────────────
+function openModal() {
+  document.getElementById('key-input').value = getApiKey();
+  document.getElementById('key-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('key-modal').classList.remove('open');
+}
+
+function saveKey() {
+  const k = document.getElementById('key-input').value.trim();
+  setApiKey(k);
+  closeModal();
+  updateKeyBtn();
+  toast('API Key guardada ✓', 'success');
+}
+
+function updateKeyBtn() {
+  const btn = document.getElementById('api-key-btn');
+  if (getApiKey()) {
+    btn.textContent = '✓ API Key';
+    btn.className = 'configured';
+    btn.id = 'api-key-btn';
+  } else {
+    btn.textContent = '⚙ API Key';
+    btn.className = '';
+    btn.id = 'api-key-btn';
+  }
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = 'toast', 2800);
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('stat-gen').textContent = businesses.filter(b => b.message).length;
+  document.getElementById('stat-sent').textContent = businesses.filter(b => b.status === 'sent').length;
+  document.getElementById('stat-pend').textContent = businesses.filter(b => b.status === 'pending').length;
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderList();
+}
+
+// ── LIST ──────────────────────────────────────────────────────────────────
+function getFiltered() {
+  const search = document.getElementById('search-filter').value.toLowerCase();
+  const cat = document.getElementById('cat-filter').value;
+  let list = businesses;
+
+  if (currentTab === 'queue') list = businesses.filter(b => b.status === 'pending').slice(0, 5);
+  else if (currentTab === 'sent') list = businesses.filter(b => b.status === 'sent');
+  else if (currentTab === 'skipped') list = businesses.filter(b => b.status === 'skipped');
+
+  return list.filter(b => {
+    const matchSearch = b.name.toLowerCase().includes(search) || b.location.toLowerCase().includes(search);
+    const matchCat = cat === 'all' || b.category === cat;
+    return matchSearch && matchCat;
+  });
+}
+
+function renderList() {
+  const list = getFiltered();
+  const container = document.getElementById('biz-list');
+  container.innerHTML = '';
+
+  if (!list.length) {
+    container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:10px;padding:30px 0;letter-spacing:0.08em">Sin resultados</div>';
+    return;
+  }
+
+  list.forEach(biz => {
+    const cfg = STATUS_CFG[biz.status] || STATUS_CFG.pending;
+    const div = document.createElement('div');
+    div.className = 'biz-card' + (selectedId === biz.id ? ' active' : '');
+    div.onclick = () => selectBusiness(biz.id);
+    div.innerHTML = `
+      <div class="card-top">
+        <span class="cat-icon">${CAT_ICONS[biz.category]}</span>
+        <div class="card-info">
+          <div class="card-name">${biz.name}</div>
+          <div class="card-loc">${biz.location} · ${CAT_LABELS[biz.category]}</div>
+        </div>
+        <div class="status-dot" style="background:${cfg.color}"></div>
+      </div>
+      <div class="card-bottom">
+        <span class="rating-small">★ ${biz.rating}</span>
+        <span class="status-text">${cfg.label}</span>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// ── SELECT BUSINESS ───────────────────────────────────────────────────────
+function selectBusiness(id) {
+  selectedId = id;
+  renderList();
+  renderDetail();
+}
+
+function renderDetail() {
+  const biz = businesses.find(b => b.id === selectedId);
+  if (!biz) return;
+
+  const cfg = STATUS_CFG[biz.status] || STATUS_CFG.pending;
+  const panel = document.getElementById('right-panel');
+
+  const waLink = `https://wa.me/${biz.phone.replace(/\D/g,'')}${biz.message ? '?text=' + encodeURIComponent(biz.message) : ''}`;
+  const igLink = `https://instagram.com/${biz.instagram.replace('@','')}`;
+  const emailLink = biz.message ? `mailto:${biz.email}?subject=Colaboraci%C3%B3n%20con%20Issue%20Zero%20Creative&body=${encodeURIComponent(biz.message)}` : `mailto:${biz.email}`;
+
+  const noKey = !getApiKey() ? `<div class="no-key-banner">⚠ Configura tu API Key de Anthropic para generar mensajes → botón "API Key" arriba a la derecha.</div>` : '';
+
+  let messageSection = '';
+
+  if (biz.status === 'generating') {
+    messageSection = `
+      <div class="generating-box">
+        <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        <span class="gen-text">Analizando negocio y redactando mensaje personalizado...</span>
+      </div>`;
+  } else if (biz.message) {
+    messageSection = `
+      <div class="section-header">
+        <span class="section-title">Mensaje de Outreach</span>
+        <button class="regen-btn" onclick="generateMessage(${biz.id})">↺ Regenerar</button>
+      </div>
+      <div class="message-box">
+        <div class="message-text" id="msg-text">${escHtml(biz.message)}</div>
+      </div>
+      <div class="action-row">
+        <button class="btn" onclick="copyMsg(${biz.id})">⊕ Copiar</button>
+        <a class="btn" href="${emailLink}" target="_blank">✉ Email</a>
+        <a class="btn btn-ig" href="${igLink}" target="_blank">◈ Instagram</a>
+        <a class="btn btn-wa" href="${waLink}" target="_blank">◈ WhatsApp</a>
+      </div>
+      <div class="final-row">
+        ${biz.status === 'sent' ? `<div class="sent-confirm">✓ Enviado — buen trabajo</div>` :
+          biz.status === 'skipped' ? `<div class="skipped-confirm">✕ Descartado</div>` :
+          `<button class="btn-sent" onclick="markSent(${biz.id})">✓ Marcar como enviado</button>
+           <button class="btn-skip" onclick="markSkipped(${biz.id})">✕ Descartar</button>`}
+      </div>`;
+  } else {
+    messageSection = `
+      <div class="section-header">
+        <span class="section-title">Mensaje de Outreach</span>
+      </div>
+      ${noKey}
+      <button class="generate-btn" onclick="generateMessage(${biz.id})" ${!getApiKey() ? 'disabled' : ''}>
+        ✦ Generar mensaje personalizado con IA
+      </button>`;
+  }
+
+  panel.innerHTML = `
+    <div class="detail">
+      <div class="detail-header">
+        <div class="detail-icon">${CAT_ICONS[biz.category]}</div>
+        <div>
+          <div class="detail-name">${biz.name}</div>
+          <div class="detail-loc">${biz.location} · ${CAT_LABELS[biz.category]}</div>
+        </div>
+        <div class="status-badge" style="background:${cfg.color}22;color:${cfg.color};border:1px solid ${cfg.color}44">${cfg.label}</div>
+      </div>
+
+      <div class="contact-grid">
+        <div class="contact-item">
+          <span class="contact-icon">✉</span>
+          <div><div class="contact-label">Email</div><div class="contact-val">${biz.email}</div></div>
+        </div>
+        <div class="contact-item">
+          <span class="contact-icon">📱</span>
+          <div><div class="contact-label">Teléfono</div><div class="contact-val">${biz.phone}</div></div>
+        </div>
+        <div class="contact-item">
+          <span class="contact-icon">◈</span>
+          <div><div class="contact-label">Instagram</div><div class="contact-val">${biz.instagram}</div></div>
+        </div>
+        <div class="contact-item">
+          <span class="contact-icon">⌘</span>
+          <div><div class="contact-label">Website</div><div class="contact-val">${biz.website}</div></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="biz-desc">${biz.description}</div>
+      <div class="rating-row">
+        <span class="star-badge">★ ${biz.rating}</span>
+        <span class="review-count">${biz.reviews} reseñas</span>
+      </div>
+      <div class="divider"></div>
+      ${messageSection}
+    </div>`;
+}
+
+// ── GENERATE ──────────────────────────────────────────────────────────────
+async function generateMessage(id) {
+  const key = getApiKey();
+  if (!key) { openModal(); return; }
+
+  const biz = businesses.find(b => b.id === id);
+  if (!biz) return;
+
+  updateBiz(id, { status: 'generating', message: null });
+  renderDetail();
+  renderList();
+
+  const systemPrompt = `Eres el especialista de outreach creativo de Issue Zero Creative. Tu trabajo es escribir mensajes de prospección que suenen como un colega creativo alcanzando a otro colega — no como un vendedor.
+
+${ISSUE_ZERO_CONTEXT}
+
+REGLAS DEL MENSAJE:
+1. Siempre en español
+2. Tutear al destinatario
+3. Abrir con un cumplido genuino y MUY específico sobre ESE negocio (su nombre, su estética, lo que los hace destacar en Tijuana)
+4. Presentar Issue Zero en máximo 2 oraciones — enfatizar que somos de TJ/SD, que hacemos producción híbrida (real + IA)
+5. Mencionar UN servicio específico que tenga sentido directo para ese tipo de negocio
+6. CTA suave y específico — nunca "avísame si te interesa", sino algo concreto como "¿Te mando algunos ejemplos de lo que hemos hecho para spas en la ciudad?"
+7. Firmar como: Alexander Arriaga / Issue Zero Creative
+8. Máximo 160 palabras
+9. Que se sienta escrito a mano, no como template
+
+Solo escribe el mensaje. Sin preamble, sin explicaciones.`;
+
+  const userPrompt = `Escribe el mensaje de outreach para este negocio:
+
+Nombre: ${biz.name}
+Categoría: ${CAT_LABELS[biz.category]}
+Ubicación: ${biz.location}
+Descripción: ${biz.description}
+Rating: ${biz.rating}/5 (${biz.reviews} reseñas)
+Instagram: ${biz.instagram}
+Website: ${biz.website}`;
+
+  try {
+    const res = await fetch('https://floral-block-cf56.rare-elite-media.workers.dev', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        
+        
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 600,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const message = data.content?.[0]?.text || '';
+    updateBiz(id, { status: 'ready', message });
+    toast('Mensaje generado ✓', 'success');
+  } catch(e) {
+    updateBiz(id, { status: 'pending' });
+    toast('Error: ' + e.message, 'error');
+    console.error(e);
+  }
+
+  renderDetail();
+  renderList();
+  updateStats();
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────
+function markSent(id) {
+  updateBiz(id, { status: 'sent' });
+  renderDetail();
+  renderList();
+  updateStats();
+  toast('Marcado como enviado ✓', 'success');
+}
+
+function markSkipped(id) {
+  updateBiz(id, { status: 'skipped' });
+  renderDetail();
+  renderList();
+  updateStats();
+  toast('Prospecto descartado', 'error');
+}
+
+function copyMsg(id) {
+  const biz = businesses.find(b => b.id === id);
+  if (biz?.message) {
+    navigator.clipboard.writeText(biz.message);
+    toast('Mensaje copiado ✓', 'success');
+  }
+}
+
+// ── ADD BUSINESS ──────────────────────────────────────────────────────────
+function addBusiness() {
+  const inp = document.getElementById('add-input');
+  const name = inp.value.trim();
+  if (!name) return;
+
+  const newBiz = {
+    id: Date.now(),
+    name,
+    category: 'small_business',
+    location: 'Tijuana, BC',
+    phone: '+52 (664) 555-0000',
+    email: 'contacto@' + name.toLowerCase().replace(/\s+/g,'-') + '.mx',
+    instagram: '@' + name.toLowerCase().replace(/\s+/g,''),
+    website: name.toLowerCase().replace(/\s+/g,'') + '.mx',
+    rating: (4.3 + Math.random() * 0.7).toFixed(1),
+    reviews: Math.floor(50 + Math.random() * 200),
+    description: 'Negocio agregado manualmente. Edita los datos de contacto antes de hacer outreach.',
+    status: 'pending',
+    message: null
+  };
+
+  businesses.unshift(newBiz);
+  saveData();
+  inp.value = '';
+  renderList();
+  updateStats();
+  selectBusiness(newBiz.id);
+  toast(`"${name}" agregado ✓`, 'success');
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+function updateBiz(id, fields) {
+  businesses = businesses.map(b => b.id === id ? { ...b, ...fields } : b);
+  saveData();
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+loadData();
+updateKeyBtn();
+renderList();
+updateStats();
+
+// Close modal on overlay click
+document.getElementById('key-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>
