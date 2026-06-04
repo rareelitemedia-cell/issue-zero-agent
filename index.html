@@ -107,16 +107,6 @@
   .btn-skip { background: #1f0a0a; border: 1px solid #ef444433; border-radius: 6px; color: var(--red); font-family: 'DM Mono', monospace; font-size: 10px; padding: 9px 14px; cursor: pointer; letter-spacing: 0.07em; }
   .sent-confirm { flex: 1; font-size: 11px; color: var(--green); text-align: center; padding: 9px; background: #0a1f12; border-radius: 6px; border: 1px solid #22c55e33; letter-spacing: 0.06em; }
   .skipped-confirm { flex: 1; font-size: 11px; color: var(--red); text-align: center; padding: 9px; background: #1f0a0a; border-radius: 6px; border: 1px solid #ef444433; letter-spacing: 0.06em; }
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; }
-  .modal-overlay.open { display: flex; }
-  .modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 12px; padding: 28px; width: 440px; max-width: 90vw; }
-  .modal-title { font-family: 'Archivo Black', sans-serif; font-size: 15px; color: #fff; margin-bottom: 6px; }
-  .modal-sub { font-size: 10px; color: var(--muted2); line-height: 1.7; margin-bottom: 18px; }
-  .modal-input { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 11px; padding: 10px 13px; outline: none; margin-bottom: 14px; }
-  .modal-input:focus { border-color: var(--gold); }
-  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
-  .modal-cancel { background: none; border: 1px solid var(--border2); border-radius: 6px; color: var(--muted2); font-family: 'DM Mono', monospace; font-size: 10px; padding: 8px 16px; cursor: pointer; }
-  .modal-save { background: var(--gold); border: none; border-radius: 6px; color: #000; font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500; padding: 8px 18px; cursor: pointer; }
   .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border2); border-radius: 8px; color: var(--text); font-size: 11px; padding: 10px 18px; z-index: 9999; opacity: 0; transform: translateY(8px); transition: all 0.25s; pointer-events: none; }
   .toast.show { opacity: 1; transform: translateY(0); }
   .toast.success { border-color: #22c55e44; color: var(--green); }
@@ -129,8 +119,6 @@
 <body>
 
 <div class="toast" id="toast"></div>
-
-<!-- API key managed server-side -->
 
 <header>
   <div class="logo">
@@ -157,7 +145,6 @@
 <div class="body">
   <div class="left">
     <div class="left-controls">
-      <!-- REAL SEARCH -->
       <input class="input-base" type="text" id="city-input" placeholder="Ciudad (ej: Tijuana, Ensenada, San Diego...)" value="Tijuana BC Mexico" />
       <div class="search-row">
         <select class="input-base" id="cat-search" style="flex:1">
@@ -172,7 +159,6 @@
         </select>
         <button class="search-btn" id="search-btn" onclick="searchBusinesses()">Buscar</button>
       </div>
-      <!-- FILTER LIST -->
       <input class="input-base" type="text" id="search-filter" placeholder="Filtrar lista..." oninput="renderList()" />
     </div>
     <div id="searching-indicator" style="display:none;padding:0 10px 6px">
@@ -194,7 +180,9 @@
 </div>
 
 <script>
+// ── ÚNICA LÍNEA QUE CAMBIÓ ──────────────────────────────────────────────
 const WORKER_URL = "https://issue-zero.rare-elite-media.workers.dev";
+// ────────────────────────────────────────────────────────────────────────
 
 const ISSUE_ZERO_CONTEXT = `
 SOBRE ISSUE ZERO CREATIVE:
@@ -241,17 +229,6 @@ function loadData() {
   if (s) { try { businesses = JSON.parse(s); } catch(e) { businesses = []; } }
 }
 function saveData() { localStorage.setItem('iz_v3_businesses', JSON.stringify(businesses)); }
-function getApiKey() { const k = localStorage.getItem('iz_api_key') || ''; return k.replace(/[^\x20-\x7E]/g, '').trim(); }
-function setApiKey(k) { localStorage.setItem('iz_api_key', k.replace(/[^\x20-\x7E]/g, '').trim()); }
-
-function openModal() { document.getElementById('key-input').value = getApiKey(); document.getElementById('key-modal').classList.add('open'); }
-function closeModal() { document.getElementById('key-modal').classList.remove('open'); }
-function saveKey() { setApiKey(document.getElementById('key-input').value.trim()); closeModal(); updateKeyBtn(); toast('API Key guardada ✓','success'); }
-function updateKeyBtn() {
-  const btn = document.getElementById('api-key-btn');
-  if (getApiKey()) { btn.textContent = '✓ API Key'; btn.className = 'hbtn configured'; }
-  else { btn.textContent = '⚙ API Key'; btn.className = 'hbtn'; }
-}
 
 let toastTimer;
 function toast(msg, type='success') {
@@ -274,7 +251,6 @@ function switchTab(tab, el) {
   renderList();
 }
 
-// ── REAL SEARCH ──────────────────────────────────────────────────────────
 async function searchBusinesses() {
   const category = document.getElementById('cat-search').value;
   const city = document.getElementById('city-input').value.trim() || 'Tijuana BC Mexico';
@@ -295,14 +271,13 @@ async function searchBusinesses() {
     const data = await res.json();
 
     if (data.businesses && data.businesses.length > 0) {
-      // Add new ones, avoid duplicates by name
       const existingNames = businesses.map(b => b.name.toLowerCase());
       const newOnes = data.businesses.filter(b => !existingNames.includes(b.name.toLowerCase()));
       businesses = [...newOnes, ...businesses];
       saveData();
       renderList();
       updateStats();
-      toast(`${newOnes.length} negocios encontrados en Tijuana ✓`, 'success');
+      toast(`${newOnes.length} negocios encontrados ✓`, 'success');
       if (newOnes.length > 0) selectBusiness(newOnes[0].id);
     } else {
       toast('No se encontraron resultados', 'error');
@@ -316,7 +291,6 @@ async function searchBusinesses() {
   indicator.style.display = 'none';
 }
 
-// ── LIST ──────────────────────────────────────────────────────────────────
 function getFiltered() {
   const search = document.getElementById('search-filter').value.toLowerCase();
   let list = businesses;
@@ -370,7 +344,6 @@ function renderDetail() {
   const waLink = `https://wa.me/${(biz.phone||'').replace(/\D/g,'')}${biz.message?'?text='+encodeURIComponent(biz.message):''}`;
   const igLink = `https://instagram.com/${(biz.instagram||'').replace('@','')}`;
   const emailLink = biz.message?`mailto:${biz.email}?subject=Colaboraci%C3%B3n%20con%20Issue%20Zero%20Creative&body=${encodeURIComponent(biz.message)}`:`mailto:${biz.email}`;
-  const noKey = '';
 
   let msgSection = '';
   if (biz.status==='generating') {
@@ -397,7 +370,6 @@ function renderDetail() {
   } else {
     msgSection = `
       <div class="section-header"><span class="section-title">Mensaje de Outreach</span></div>
-      ${noKey}
       <button class="generate-btn" onclick="generateMessage(${biz.id})">✦ Generar mensaje personalizado con IA</button>`;
   }
 
@@ -451,11 +423,7 @@ Write the outreach message now.`;
     const res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-action': 'generate' },
-      body: JSON.stringify({
-        businessData,
-        photos: biz.photos || [],
-        lang
-      })
+      body: JSON.stringify({ businessData, photos: biz.photos || [], lang })
     });
 
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -465,7 +433,7 @@ Write the outreach message now.`;
     const message = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
     if (!message) throw new Error('Respuesta vacia');
     updateBiz(id, { status:'ready', message });
-    toast('Mensaje generado', 'success');
+    toast('Mensaje generado ✓', 'success');
   } catch(e) {
     updateBiz(id, { status:'pending' });
     toast('Error: '+e.message, 'error');
@@ -480,7 +448,6 @@ function updateBiz(id,fields) { businesses=businesses.map(b=>b.id===id?{...b,...
 function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 loadData(); renderList(); updateStats();
-
 </script>
 </body>
 </html>
