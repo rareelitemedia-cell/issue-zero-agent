@@ -73,6 +73,13 @@
   .contact-icon { font-size: 12px; color: var(--gold); flex-shrink: 0; margin-top: 1px; }
   .contact-label { font-size: 8px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
   .contact-val { font-size: 10px; color: #ccc; margin-top: 2px; word-break: break-all; }
+  .contact-val a { color: #ccc; text-decoration: none; }
+  .contact-val a:hover { color: var(--gold); }
+  .contact-loading { color: var(--muted) !important; font-style: italic; }
+  .contact-found { color: var(--green) !important; }
+  .contact-none { color: var(--muted) !important; }
+  @keyframes pulse-dot { 0%,100%{opacity:.2} 50%{opacity:1} }
+  .scrape-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--gold); margin-right: 4px; vertical-align: middle; animation: pulse-dot 1s infinite; }
   .divider { height: 1px; background: var(--border); margin: 16px 0; }
   .biz-desc { font-size: 11px; color: var(--muted2); line-height: 1.8; }
   .rating-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
@@ -114,11 +121,41 @@
   .searching-bar { background: #1a1400; border: 1px solid var(--gold); border-radius: 7px; padding: 10px 14px; font-size: 11px; color: var(--gold); display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
   ::-webkit-scrollbar { width: 3px; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* ── WA MODAL ── */
+  #wa-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.88); z-index: 99999; align-items: center; justify-content: center; }
+  #wa-modal.open { display: flex; }
+  .wa-box { background: var(--surface); border: 1px solid var(--border2); border-radius: 12px; padding: 24px 20px; width: 260px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.9); }
+  .wa-title { font-family: 'Archivo Black', sans-serif; font-size: 13px; color: var(--gold); letter-spacing: .12em; margin-bottom: 4px; }
+  .wa-num { font-size: 11px; color: var(--muted); margin-bottom: 18px; letter-spacing: .05em; }
+  .wa-btns { display: flex; flex-direction: column; gap: 7px; }
+  .wa-btns button { width: 100%; padding: 9px; border-radius: 6px; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .06em; transition: opacity .15s; }
+  .wa-btns button:hover { opacity: .8; }
+  .wb-safari { background: #0a1f12; color: var(--green); border: 1px solid #22c55e33; }
+  .wb-chrome { background: #0f1828; color: var(--blue); border: 1px solid #3b82f633; }
+  .wb-web    { background: #0f1f10; color: #25d366; border: 1px solid #25d36633; }
+  .wb-copy   { background: var(--surface2); color: var(--muted2); border: 1px solid var(--border2); }
+  .wb-cancel { background: transparent; color: var(--muted); border: 1px solid transparent; font-size: 10px; }
 </style>
 </head>
 <body>
 
 <div class="toast" id="toast"></div>
+
+<!-- ── WA MODAL ── -->
+<div id="wa-modal" onclick="if(event.target===this)closeWAModal()">
+  <div class="wa-box">
+    <div class="wa-title">WHATSAPP</div>
+    <div class="wa-num" id="wa-modal-num"></div>
+    <div class="wa-btns">
+      <button class="wb-safari" onclick="openWA('safari')">🧭 Abrir en Safari</button>
+      <button class="wb-chrome" onclick="openWA('chrome')">🌐 Abrir en Chrome</button>
+      <button class="wb-web"    onclick="openWA('web')">💻 WhatsApp Web</button>
+      <button class="wb-copy"   onclick="copyWANumber()">📋 Copiar número</button>
+      <button class="wb-cancel" onclick="closeWAModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
 
 <header>
   <div class="logo">
@@ -180,9 +217,7 @@
 </div>
 
 <script>
-// ── ÚNICA LÍNEA QUE CAMBIÓ ──────────────────────────────────────────────
 const WORKER_URL = "https://issue-zero.rare-elite-media.workers.dev";
-// ────────────────────────────────────────────────────────────────────────
 
 const ISSUE_ZERO_CONTEXT = `
 SOBRE ISSUE ZERO CREATIVE:
@@ -211,7 +246,7 @@ CONTACTO: alexander@theamenitybyalexander.com
 `;
 
 const CAT_LABELS = { medical_spa:"Medical Spa", cafe:"Café", restaurant:"Restaurante", small_business:"Negocio" };
-const CAT_ICONS = { medical_spa:"✦", cafe:"◈", restaurant:"◉", small_business:"◆" };
+const CAT_ICONS  = { medical_spa:"✦", cafe:"◈", restaurant:"◉", small_business:"◆" };
 const STATUS_CFG = {
   pending:    { label:"Pendiente",    color:"#555" },
   generating: { label:"Generando...", color:"#f59e0b" },
@@ -223,6 +258,8 @@ const STATUS_CFG = {
 let businesses = [];
 let selectedId = null;
 let currentTab = 'all';
+let currentWAPhone = '';
+let currentWAMessage = '';
 
 function loadData() {
   const s = localStorage.getItem('iz_v3_businesses');
@@ -239,7 +276,7 @@ function toast(msg, type='success') {
 }
 
 function updateStats() {
-  document.getElementById('stat-gen').textContent = businesses.filter(b=>b.message).length;
+  document.getElementById('stat-gen').textContent  = businesses.filter(b=>b.message).length;
   document.getElementById('stat-sent').textContent = businesses.filter(b=>b.status==='sent').length;
   document.getElementById('stat-pend').textContent = businesses.filter(b=>b.status==='pending').length;
 }
@@ -257,8 +294,7 @@ async function searchBusinesses() {
   const btn = document.getElementById('search-btn');
   const indicator = document.getElementById('searching-indicator');
 
-  btn.disabled = true;
-  btn.textContent = '...';
+  btn.disabled = true; btn.textContent = '...';
   indicator.style.display = 'block';
 
   try {
@@ -267,16 +303,12 @@ async function searchBusinesses() {
       headers: { 'Content-Type': 'application/json', 'x-action': 'places-search' },
       body: JSON.stringify({ query: category, location: city })
     });
-
     const data = await res.json();
-
     if (data.businesses && data.businesses.length > 0) {
       const existingNames = businesses.map(b => b.name.toLowerCase());
       const newOnes = data.businesses.filter(b => !existingNames.includes(b.name.toLowerCase()));
       businesses = [...newOnes, ...businesses];
-      saveData();
-      renderList();
-      updateStats();
+      saveData(); renderList(); updateStats();
       toast(`${newOnes.length} negocios encontrados ✓`, 'success');
       if (newOnes.length > 0) selectBusiness(newOnes[0].id);
     } else {
@@ -285,17 +317,15 @@ async function searchBusinesses() {
   } catch(e) {
     toast('Error buscando: ' + e.message, 'error');
   }
-
-  btn.disabled = false;
-  btn.textContent = 'Buscar';
+  btn.disabled = false; btn.textContent = 'Buscar';
   indicator.style.display = 'none';
 }
 
 function getFiltered() {
   const search = document.getElementById('search-filter').value.toLowerCase();
   let list = businesses;
-  if (currentTab === 'queue') list = businesses.filter(b=>b.status==='pending').slice(0,5);
-  else if (currentTab === 'sent') list = businesses.filter(b=>b.status==='sent');
+  if (currentTab === 'queue')   list = businesses.filter(b=>b.status==='pending').slice(0,5);
+  else if (currentTab === 'sent')    list = businesses.filter(b=>b.status==='sent');
   else if (currentTab === 'skipped') list = businesses.filter(b=>b.status==='skipped');
   return list.filter(b => b.name.toLowerCase().includes(search) || (b.location||'').toLowerCase().includes(search));
 }
@@ -334,6 +364,37 @@ function selectBusiness(id) {
   selectedId = id;
   renderList();
   renderDetail();
+  // Scrape website si tiene uno y no se ha hecho todavía
+  const biz = businesses.find(b => b.id === id);
+  if (biz && biz.website && !biz.scraped) {
+    scrapeWebsite(id);
+  }
+}
+
+// ── SCRAPE WEBSITE ────────────────────────────────────────────────────────────
+async function scrapeWebsite(id) {
+  const biz = businesses.find(b => b.id === id);
+  if (!biz || !biz.website) return;
+
+  updateBiz(id, { scraped: 'loading' });
+  if (selectedId === id) renderDetail();
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-action': 'scrape-website' },
+      body: JSON.stringify({ url: biz.website })
+    });
+    const data = await res.json();
+    const updates = { scraped: true };
+    if (data.emails?.length)     updates.email     = data.emails[0];
+    if (data.instagrams?.length) updates.instagram = '@' + data.instagrams[0].replace('@','');
+    if (data.facebooks?.length)  updates.facebook  = data.facebooks[0];
+    updateBiz(id, updates);
+  } catch(e) {
+    updateBiz(id, { scraped: true });
+  }
+  if (selectedId === id) renderDetail();
 }
 
 function renderDetail() {
@@ -341,10 +402,32 @@ function renderDetail() {
   if (!biz) return;
   const cfg = STATUS_CFG[biz.status]||STATUS_CFG.pending;
   const panel = document.getElementById('right-panel');
-  const waLink = `https://wa.me/${(biz.phone||'').replace(/\D/g,'')}${biz.message?'?text='+encodeURIComponent(biz.message):''}`;
-  const igLink = `https://instagram.com/${(biz.instagram||'').replace('@','')}`;
-  const emailLink = biz.message?`mailto:${biz.email}?subject=Colaboraci%C3%B3n%20con%20Issue%20Zero%20Creative&body=${encodeURIComponent(biz.message)}`:`mailto:${biz.email}`;
 
+  // ── Contact field display ─────────────────────────────────────────────────
+  const isLoading = biz.scraped === 'loading';
+  const isDone    = biz.scraped === true;
+
+  function contactVal(rawVal, foundVal, type) {
+    if (!biz.website) return rawVal || '—';
+    if (isLoading) return `<span class="contact-loading"><span class="scrape-dot"></span>leyendo...</span>`;
+    if (isDone) {
+      if (foundVal) {
+        if (type === 'email') return `<a href="mailto:${foundVal}" class="contact-found">${foundVal}</a>`;
+        if (type === 'ig')    return `<a href="https://instagram.com/${foundVal.replace('@','')}" target="_blank" class="contact-found">${foundVal}</a>`;
+        return `<span class="contact-found">${foundVal}</span>`;
+      }
+      return `<span class="contact-none">no encontrado</span>`;
+    }
+    return rawVal || '—';
+  }
+
+  // ── Links ─────────────────────────────────────────────────────────────────
+  const igLink    = `https://instagram.com/${(biz.instagram||'').replace('@','')}`;
+  const emailLink = biz.message
+    ? `mailto:${biz.email}?subject=Colaboraci%C3%B3n%20con%20Issue%20Zero%20Creative&body=${encodeURIComponent(biz.message)}`
+    : `mailto:${biz.email}`;
+
+  // ── Message section ───────────────────────────────────────────────────────
   let msgSection = '';
   if (biz.status==='generating') {
     msgSection = `<div class="generating-box"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><span class="gen-text">Analizando y redactando mensaje personalizado...</span></div>`;
@@ -359,13 +442,15 @@ function renderDetail() {
         <button class="btn" onclick="copyMsg(${biz.id})">⊕ Copiar</button>
         <a class="btn" href="${emailLink}" target="_blank">✉ Email</a>
         <a class="btn btn-ig" href="${igLink}" target="_blank">◈ Instagram</a>
-        <a class="btn btn-wa" href="${waLink}" target="_blank">◈ WhatsApp</a>
+        <button class="btn btn-wa" onclick="openWAModal(${biz.id})">◈ WhatsApp</button>
       </div>
       <div class="final-row">
-        ${biz.status==='sent'?`<div class="sent-confirm">✓ Enviado</div>`:
-          biz.status==='skipped'?`<div class="skipped-confirm">✕ Descartado</div>`:
-          `<button class="btn-sent" onclick="markSent(${biz.id})">✓ Marcar enviado</button>
-           <button class="btn-skip" onclick="markSkipped(${biz.id})">✕ Descartar</button>`}
+        ${biz.status==='sent'
+          ? `<div class="sent-confirm">✓ Enviado</div>`
+          : biz.status==='skipped'
+          ? `<div class="skipped-confirm">✕ Descartado</div>`
+          : `<button class="btn-sent" onclick="markSent(${biz.id})">✓ Marcar enviado</button>
+             <button class="btn-skip" onclick="markSkipped(${biz.id})">✕ Descartar</button>`}
       </div>`;
   } else {
     msgSection = `
@@ -384,10 +469,10 @@ function renderDetail() {
         <div class="status-badge" style="background:${cfg.color}22;color:${cfg.color};border:1px solid ${cfg.color}44">${cfg.label}</div>
       </div>
       <div class="contact-grid">
-        <div class="contact-item"><span class="contact-icon">✉</span><div><div class="contact-label">Email</div><div class="contact-val">${biz.email||'—'}</div></div></div>
+        <div class="contact-item"><span class="contact-icon">✉</span><div><div class="contact-label">Email</div><div class="contact-val">${contactVal(biz.email, biz.email, 'email')}</div></div></div>
         <div class="contact-item"><span class="contact-icon">📱</span><div><div class="contact-label">Teléfono</div><div class="contact-val">${biz.phone||'—'}</div></div></div>
-        <div class="contact-item"><span class="contact-icon">◈</span><div><div class="contact-label">Instagram</div><div class="contact-val">${biz.instagram||'—'}</div></div></div>
-        <div class="contact-item"><span class="contact-icon">⌘</span><div><div class="contact-label">Website</div><div class="contact-val">${biz.website||'—'}</div></div></div>
+        <div class="contact-item"><span class="contact-icon">◈</span><div><div class="contact-label">Instagram</div><div class="contact-val">${contactVal(biz.instagram, biz.instagram, 'ig')}</div></div></div>
+        <div class="contact-item"><span class="contact-icon">⌘</span><div><div class="contact-label">Website</div><div class="contact-val">${biz.website ? `<a href="${biz.website}" target="_blank">${biz.website.replace(/^https?:\/\//,'').replace(/\/$/,'')}</a>` : '—'}</div></div></div>
       </div>
       <div class="divider"></div>
       <div class="biz-desc">${biz.description && !biz.description.includes("Tijuana, BC.") ? biz.description : (biz.name + " — " + (CAT_LABELS[biz.category]||"Negocio") + " ubicado en " + biz.location + ".")}</div>
@@ -403,7 +488,6 @@ function renderDetail() {
 async function generateMessage(id) {
   const biz = businesses.find(b=>b.id===id);
   if (!biz) return;
-
   updateBiz(id, { status:'generating', message:null });
   renderDetail(); renderList();
 
@@ -425,7 +509,6 @@ Write the outreach message now.`;
       headers: { 'Content-Type': 'application/json', 'x-action': 'generate' },
       body: JSON.stringify({ businessData, photos: biz.photos || [], lang })
     });
-
     if (!res.ok) throw new Error('HTTP ' + res.status);
     let data;
     try { data = await res.json(); } catch(e) { throw new Error('Respuesta invalida del servidor'); }
@@ -441,11 +524,37 @@ Write the outreach message now.`;
   renderDetail(); renderList(); updateStats();
 }
 
-function markSent(id) { updateBiz(id,{status:'sent'}); renderDetail(); renderList(); updateStats(); toast('Marcado como enviado ✓','success'); }
+function markSent(id)    { updateBiz(id,{status:'sent'});    renderDetail(); renderList(); updateStats(); toast('Marcado como enviado ✓','success'); }
 function markSkipped(id) { updateBiz(id,{status:'skipped'}); renderDetail(); renderList(); updateStats(); toast('Descartado','error'); }
-function copyMsg(id) { const b=businesses.find(x=>x.id===id); if(b?.message){ navigator.clipboard.writeText(b.message); toast('Copiado ✓','success'); } }
+function copyMsg(id)     { const b=businesses.find(x=>x.id===id); if(b?.message){ navigator.clipboard.writeText(b.message); toast('Copiado ✓','success'); } }
 function updateBiz(id,fields) { businesses=businesses.map(b=>b.id===id?{...b,...fields}:b); saveData(); }
-function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escHtml(s)      { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── WA MODAL ─────────────────────────────────────────────────────────────────
+function openWAModal(id) {
+  const biz = businesses.find(b => b.id === id);
+  if (!biz) return;
+  currentWAPhone   = biz.phone || '';
+  currentWAMessage = biz.message || '';
+  document.getElementById('wa-modal-num').textContent = currentWAPhone;
+  document.getElementById('wa-modal').classList.add('open');
+}
+function closeWAModal() {
+  document.getElementById('wa-modal').classList.remove('open');
+}
+function openWA(mode) {
+  const phone = currentWAPhone.replace(/\D/g,'');
+  if (!phone) { toast('Sin número de teléfono','error'); return; }
+  const waUrl  = currentWAMessage ? `https://wa.me/${phone}?text=${encodeURIComponent(currentWAMessage)}` : `https://wa.me/${phone}`;
+  const webUrl = currentWAMessage ? `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(currentWAMessage)}` : `https://web.whatsapp.com/send?phone=${phone}`;
+  if (mode === 'safari') window.location.href = waUrl;
+  else if (mode === 'chrome') window.location.href = `googlechromes://wa.me/${phone}`;
+  else if (mode === 'web')    window.open(webUrl, '_blank');
+  closeWAModal();
+}
+function copyWANumber() {
+  navigator.clipboard.writeText(currentWAPhone).then(() => { closeWAModal(); toast('Número copiado ✓','success'); });
+}
 
 loadData(); renderList(); updateStats();
 </script>
